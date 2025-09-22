@@ -56,10 +56,19 @@ class AuthenticationController extends Controller
                 ], 500);
         }
     }
-    public function logout(){
+    public function logout(Request $request){
         try {
-        } catch (Exception $e){
+            $request->user()->currentAccessToken()->delete();
 
+            return response()->json([
+                'message' => 'Berhasil Logout',
+                'data' => null
+            ],200);
+        } catch (Exception $e){
+            return response()->json([
+                    'message' => $e->getMessage(),
+                    'data' => null
+                ], 500);
         }
     }
 }
