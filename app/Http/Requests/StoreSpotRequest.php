@@ -27,7 +27,7 @@ class StoreSpotRequest extends FormRequest
             'address' => 'required|string',
             'picture' => 'required|image|image:jpeg,png,jpg,webp|max:2048',
             'category' => 'required|array|min:1',
-            'category' => 'required|string'
+            'category*' => 'required|string'
         ];
     }
 }

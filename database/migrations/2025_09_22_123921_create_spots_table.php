@@ -15,7 +15,7 @@ return new class extends Migration
         Schema::create('spots', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(User::class);
-            $table->string('nama');
+            $table->string('name');
             $table->string('address');
             $table->text('picture');
             $table->timestamps();

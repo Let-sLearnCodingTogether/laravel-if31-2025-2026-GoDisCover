@@ -20,7 +20,7 @@ class SpotController extends Controller
      */
     public function index()
     {
-        //
+        
     }
 
     /**
@@ -50,12 +50,12 @@ class SpotController extends Controller
                         'category' => $category
                     ];
                 }
+                Category::fillAndInsert($categories);
+                return Response::json([
+                    'message' => 'Spot Berhasil',
+                    'data' => null
+                ], 201);
             }
-            Category::fillAndInsert($categories);
-            return Response::json([
-                'message' => 'Gagal Membuat spot baru',
-                'data' => null
-            ], 500);
         } catch (Exception $e) {
             return Response::json([
                 'message' => $e->getMessage(),
