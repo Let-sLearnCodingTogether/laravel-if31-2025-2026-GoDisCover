@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSpotRequest;
+use App\Http\Requests\UpdateSpotRequest;
 use App\Models\Category;
 use App\Models\Spot;
 use Exception;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
 
 use function Pest\Laravel\call;
+use function Pest\Laravel\get;
 
 class SpotController extends Controller
 {
@@ -20,7 +22,25 @@ class SpotController extends Controller
      */
     public function index()
     {
-        
+        try {
+            $spot = Spot::with([
+                'user:id,name',
+                'categories:category,spot_id'
+                ])
+                ->withCount('reviews')
+                ->withSum('reviews','rating')
+                ->orderBy('created_at','desc')
+                ->paginate(request('size',10));
+                return Response::json([
+                    'message' => 'List Berhasil',
+                    'data' => null
+                ], 200);
+        } catch (Exception $e) {
+            return Response::json([
+                'message' => $e->getMessage(),
+                'data' => null
+            ], 500);
+        }
     }
 
     /**
@@ -54,7 +74,7 @@ class SpotController extends Controller
                 return Response::json([
                     'message' => 'Spot Berhasil',
                     'data' => null
-                ], 201);
+                ], 200);
             }
         } catch (Exception $e) {
             return Response::json([
@@ -69,7 +89,22 @@ class SpotController extends Controller
      */
     public function show(Spot $spot)
     {
-        //
+        try {
+        return Response::json([
+                    'message' => 'List Berhasil',
+                    'data' => $spot->load([
+                        'user:id,name',
+                        'categories:category,spot_id'
+                    ])
+                    ->loadCount(['reviews'])
+                    ->loadSum('reviews','rating')
+                ], 200);
+        } catch (Exception $e) {
+            return Response::json([
+                'message' => $e->getMessage(),
+                'data' => null
+            ], 500);
+        }
     }
 
     /**
@@ -83,9 +118,42 @@ class SpotController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Spot $spot)
+    public function update(UpdateSpotRequest $request, Spot $spot)
     {
-        //
+        try {
+            $request = $request->safe()->all();
+            //cek request ada picture
+            if(isset($validated['picture'])){
+                $picture_path = Storage::disk('public')->putFile('spots',$request->file('picture'));
+            }
+            //cek request ada category
+            if(isset($validated['category'])){
+                Category::where('spot_id',$spot->id)->delete();
+                $categories = [];
+                foreach ($validated['category'] as $category) {
+                    $categories[] = [
+                        'spot_id' => $spot->id,
+                        'category' => $category
+                    ];
+                }
+                Category::fillAndInsert($categories);
+                
+                $spot->update([
+                    'name'=> $validated['name'],
+                    'picture' => $picture_path ?? $spot->picture,
+                    'address' => $validated['address']
+                ]);
+                return Response::json([
+                    'message' => 'Spot Berhasil',
+                    'data' => null
+                ], 200);
+            }
+        } catch (Exception $e) {
+            return Response::json([
+                'message' => $e->getMessage(),
+                'data' => null
+            ], 500);
+        }
     }
 
     /**
@@ -93,6 +161,26 @@ class SpotController extends Controller
      */
     public function destroy(Spot $spot)
     {
-        //
+        try{
+            $user = Auth::user();
+            if($spot->user_id == $user->id || $user->role == 'admin'){
+                if($spot->delete()){
+                    return Response::json([
+                            'message' => 'Spot Berhasil dihapus',
+                            'data' => null
+                        ], 200);
+                }
+             } else {
+                    return Response::json([
+                            'message' => 'Spot Gagal Dihapus',
+                            'data' => null
+                        ], 200);
+            }
+        } catch (Exception $e) {
+            return Response::json([
+                'message' => $e->getMessage(),
+                'data' => null
+            ], 500);
+        }
     }
 }
